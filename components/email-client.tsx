@@ -214,10 +214,11 @@ function Sidebar({
         </Button>
         <Button
           onClick={onGenerate}
-          className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white border-0 h-9 text-xs shadow-lg shadow-violet-900/30"
+          disabled={loading}
+          className="w-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white border-0 h-9 text-xs shadow-lg shadow-violet-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="w-3.5 h-3.5" />
-          New address
+          {loading ? "Generating..." : "New address"}
         </Button>
       </div>
 
@@ -556,7 +557,9 @@ export function EmailClient() {
     setSelectedId(null);
     try {
       const res = await fetch("/api/generate");
+      if (!res.ok) throw new Error("Failed to generate email");
       const data = await res.json();
+      if (data.error) throw new Error(data.error);
       setEmailAddress(data);
     } catch {
       toast({ title: "Error", description: "Failed to generate email address.", variant: "destructive" });
