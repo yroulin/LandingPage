@@ -556,8 +556,8 @@ export function EmailClient() {
     try {
       const res = await fetch("/api/generate");
       if (!res.ok) throw new Error("Failed to generate email");
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      const data: EmailAddress = await res.json();
+      if (!data.login || !data.domain) throw new Error("Invalid response");
       setEmailAddress(data);
     } catch {
       toast({ title: "Error", description: "Failed to generate email address.", variant: "destructive" });
@@ -572,24 +572,25 @@ export function EmailClient() {
       const res = await fetch(
         `/api/messages?login=${encodeURIComponent(addr.login)}&domain=${encodeURIComponent(addr.domain)}`
       );
+      if (!res.ok) return;
       const data = await res.json();
       if (Array.isArray(data)) {
-        const prev = messages.length;
-        setMessages(data);
-        if (data.length > prev && prev > 0) {
-          toast({
-            title: "New email arrived!",
-            description: `${data[0].from}: ${data[0].subject || "(No subject)"}`,
-          });
-        }
+        setMessages((prev) => {
+          if (data.length > prev.length && prev.length > 0) {
+            toast({
+              title: "New email arrived!",
+              description: `${data[0].from}: ${data[0].subject || "(No subject)"}`,
+            });
+          }
+          return data;
+        });
       }
     } catch {
       // silent fail on poll
     } finally {
       setLoadingMessages(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [emailAddress]);
+  }, []);
 
   const fetchMessage = useCallback(async (id: number) => {
     if (!emailAddress) return;
